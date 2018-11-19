@@ -1,5 +1,6 @@
 import queue
 import threading
+import json
 
 
 ## wrapper class for a queue of packets
@@ -158,7 +159,7 @@ class Router:
             tempStr = str(intercost.values().__iter__().__next__())
             l1 += tempStr + " | "
             pass
-        print (headerVar + '\n' + l1) 
+        print (headerVar + '\n' + l1)
 
 
 
@@ -205,8 +206,9 @@ class Router:
     # @param i Interface number on which to send out a routing update
     def send_routes(self, i):
         # TODO: Send out a routing table update
-        #create a routing table update packet
-        p = NetworkPacket(0, 'control', 'DUMMY_ROUTING_TABLE')
+        # create a routing table update packet
+        # "This router knows about hosts {} with distances {}"
+        p = NetworkPacket(0, 'control', json.dumps(self.cost_D))
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
             self.intf_L[i].put(p.to_byte_S(), 'out', True)
@@ -220,7 +222,20 @@ class Router:
     def update_routes(self, p, i):
         #TODO: add logic to update the routing tables and
         # possibly send out routing updates
-        print('%s: Received routing update %s from interface %d' % (self, p, i))
+        # loop through current routing table
+        convertDict = json.loads(p.data_S)
+        print("Packet Dict: ", convertDict)
+        for s_name, s_intercost in self.cost_D:
+            print("S_name: ", s_name, "s_intercost: ", s_intercost)
+            for entry in convertDict:
+                print("entry: ", entry)
+                # if the host names are the same
+                if s_name == p_name:
+                    # check if update has shorter route
+                    if convertDict[s_name] < self.cost_D[s_name]:
+                        # update current routing table with new path costs
+                        self.cost_D[s_name] = convertDict[s_name].items()
+                        print('%s: Received routing update %s from interface %d' % (self, p, i))
 
 
     ## thread target for the host to keep forwarding data

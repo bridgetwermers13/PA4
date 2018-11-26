@@ -145,8 +145,13 @@ class Router:
     def print_routes(self):
         # TODO: print the routes as a two dimensional table
         # print(self.rt_tbl_D)
+        headerLine = self.name + " | "
+        selfLine = self.name + " | "
         for i in self.cost_D:
-            print(i, self.cost_D[i])
+            headerLine += i + " | "
+            selfLine += str(self.cost_D[i].values()[0]) + " | "
+        print(headerLine)
+        print(selfLine)
 
     # called when printing the object
     def __str__(self):

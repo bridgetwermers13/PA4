@@ -145,15 +145,8 @@ class Router:
     def print_routes(self):
         # TODO: print the routes as a two dimensional table
         # print(self.rt_tbl_D)
-        print ("=====================")
-        headerVar = self.name + " | "
-        l1 = self.name + " | "
-        for name, intercost in self.cost_D.items():
-            headerVar += name + " | "
-            tempStr = str(intercost.values().__iter__().__next__())
-            l1 += tempStr + " | "
-            pass
-        print (headerVar + '\n' + l1)
+        for i in self.cost_D:
+            print(i, self.cost_D[i])
 
     # called when printing the object
     def __str__(self):
@@ -196,8 +189,11 @@ class Router:
     def send_routes(self, i):
         # TODO: Send out a routing table update
         # create a routing table update packet
-        # "This router knows about hosts {} with distances {}"
-        p = NetworkPacket(0, 'control', json.dumps(self.cost_D))
+        # "[through this router]:[i can reach this dest]:[with a cost of #];"
+        encodedTable = ""
+        for key in self.cost_D:
+            encodedTable += "{}:{}:{};".format(self.name, key, str(self.cost_D[key].values()[0]))
+        p = NetworkPacket(0, 'control', encodedTable)
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
             self.intf_L[i].put(p.to_byte_S(), 'out', True)
@@ -207,31 +203,40 @@ class Router:
 
     # Update routing table based on a route update packet
     #  @param p Packet containing routing information
+    #  @param i Interface packet was received on
     def update_routes(self, p, i):
         # TODO: add logic to update the routing tables and
         # possibly send out routing updates
         # loop through current routing table
-
-        # 1. Check where packet is from
+        # 1. Lookup host name from interface
         # 2. If packet is from a router that does not exist as a vector in
         #    self.cost_D
         #    a. Add row to self.cost_D for source router
         #    b. For every entry in p.data_S that doesn't exist as a column in
         #       self.cost_D
         #       - Add column for new entry in self.cost_D
+        #       - Insert value (cost to p + entry)
         # 3. Else
         #    a. (2b)
         #    b. Check all corresponding values in each table
         #    c. If value in p.data_S > self.cost_D
         #       a. Update value in self.cost_D with (cost to p + cost in p)
-        convertDict = json.loads(p.data_S)
-        print("Packet Dict: ", convertDict)
+        # convertDict = json.loads(p.data_S)
+        print("Packet Dict: ", p.data_S)
         print("This dict: ", self.cost_D)
-        for cost in self.cost_D.values():
-            print("cost:", cost)
-            for entry in convertDict.values():
-                print("entry: ", entry)
-                print('%s: Received routing update %s from interface %d' % (self, p, i))
+        entries = p.data_S.split(";")
+        entries = list(filter(None, entries)) # fastest
+        for entry in entries:
+            items = entry.split(":")
+            source = items[0]
+            print("===========================")
+            print("Source: {}".format(source))
+            dest = items[1]
+            print("Destination: {}".format(dest))
+            cost = items[2]
+            print("Cost: {}".format(cost))
+
+        print('%s: Received routing update %s from interface %d' % (self, p, i))
 
     # thread target for the host to keep forwarding data
     def run(self):

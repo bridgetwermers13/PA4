@@ -139,6 +139,8 @@ class Router:
         # TODO: set up the routing table for connected hosts
         self.rt_tbl_D = {}      # {destination: {router: cost}}
         print('%s: Initialized routing table' % self)
+        for key in self.cost_D:
+            self.rt_tbl_D[key] = {self.name: self.cost_D[key]}
         self.print_routes()
 
     # Print routing table
@@ -147,9 +149,11 @@ class Router:
         # print(self.rt_tbl_D)
         headerLine = self.name + " | "
         selfLine = self.name + " | "
-        for i in self.cost_D:
+        # nextLine = self.rt_tbl_D
+        for i in self.rt_tbl_D:
             headerLine += i + " | "
-            selfLine += str(list(self.cost_D[i].values())[0]) + " | "
+            selfLine += str(self.rt_tbl_D[i]) + " | "
+            # nextLine
         print(headerLine)
         print(selfLine)
 
@@ -245,32 +249,24 @@ class Router:
         print("Current Routing Table: ", self.rt_tbl_D)
         entries = p.data_S.split(";")
         entries = list(filter(None, entries))
-        if len(self.rt_tbl_D) != 0:
-            # for every entry in the routing update packet
-            for entry in entries:
-                items = entry.split(":")
-                source = items[0]
-                print("source: ", source)
-                distance_to_router = list(self.cost_D[source].values())[0]
-                print("distance to router: ", distance_to_router)
-                dest = items[1]
-                cost = items[2]
-                # if it is not itself
-                if source != self.name:
-                    # if destination is not in current routing table
-                    if dest not in self.rt_tbl_D:
-                        self.rt_tbl_D[dest] = {source: int(cost) + int(distance_to_router)}
-                # print("===========================")
-                # print("Source: {}".format(source))
-                # print("Destination: {}".format(dest))
-                # print("Cost: {}".format(cost))
-        else:
-            entries = p.data_S.split(";")
-            dest = entries[0].split(":")[1]
-            for key in self.cost_D:
-                # dest : {router, cost}
-                self.rt_tbl_D[dest] = {key: self.cost_D[key]}
-        print(self.rt_tbl_D)
+        for entry in entries:
+            items = entry.split(":")
+            source = items[0]
+            print("source: ", source)
+            distance_to_router = list(self.cost_D[source].values())[0]
+            print("distance to router: ", distance_to_router)
+            dest = items[1]
+            cost = items[2]
+            # if it is not itself
+            if source != self.name:
+                # if destination is not in current routing table
+                if dest not in self.rt_tbl_D:
+                    self.rt_tbl_D[dest] = {source: int(cost) + int(distance_to_router)}
+            # print("===========================")
+            # print("Source: {}".format(source))
+            # print("Destination: {}".format(dest))
+            # print("Cost: {}".format(cost))
+        self.print_routes()
         print('%s: Received routing update %s from interface %d' % (self, p, i))
 
     # thread target for the host to keep forwarding data

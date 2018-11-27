@@ -149,7 +149,7 @@ class Router:
         selfLine = self.name + " | "
         for i in self.cost_D:
             headerLine += i + " | "
-            selfLine += str(self.cost_D[i].values()[0]) + " | "
+            selfLine += str(list(self.cost_D[i].values())[0]) + " | "
         print(headerLine)
         print(selfLine)
 
@@ -197,7 +197,7 @@ class Router:
         # "[through this router]:[i can reach this dest]:[with a cost of #];"
         encodedTable = ""
         for key in self.cost_D:
-            encodedTable += "{}:{}:{};".format(self.name, key, str(self.cost_D[key].values()[0]))
+            encodedTable += "{}:{}:{};".format(self.name, key, str(list(self.cost_D[key].values())[0]))
         p = NetworkPacket(0, 'control', encodedTable)
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
@@ -230,17 +230,23 @@ class Router:
         print("Packet Dict: ", p.data_S)
         print("This dict: ", self.cost_D)
         entries = p.data_S.split(";")
-        entries = list(filter(None, entries)) # fastest
+        entries = list(filter(None, entries))
         for entry in entries:
             items = entry.split(":")
             source = items[0]
-            print("===========================")
-            print("Source: {}".format(source))
+            print("source: ", source)
+            distance_to_router = list(self.cost_D[source].values())[0]
+            print("distance to router: ", distance_to_router)
             dest = items[1]
-            print("Destination: {}".format(dest))
             cost = items[2]
-            print("Cost: {}".format(cost))
-
+            if source != self.name:
+                if dest not in self.cost_D:
+                    self.cost_D[dest] = {i: int(cost) + int(distance_to_router)}
+            # print("===========================")
+            # print("Source: {}".format(source))
+            # print("Destination: {}".format(dest))
+            # print("Cost: {}".format(cost))
+        print(self.cost_D)
         print('%s: Received routing update %s from interface %d' % (self, p, i))
 
     # thread target for the host to keep forwarding data

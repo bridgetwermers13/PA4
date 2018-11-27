@@ -157,7 +157,7 @@ class Router:
             if i == self.name:
                 selfLine += " 0 " + " | "
             else:
-                selfLine += str(list(self.rt_tbl_D[i].values())[0]) + " | "
+                selfLine += str(list(dict(list(self.rt_tbl_D[i].values())[0]).values())[0]) + " | "
         print(headerLine)
         print(selfLine)
         print()
@@ -196,12 +196,13 @@ class Router:
             # 3. Return interface from rt_tbl_D?
             router_name = list(self.rt_tbl_D[p.dst].keys())[0]
             router_name.strip()
+            print("dest: ", p.dst)
             print("forwarding to : ", router_name)
-            inter = list(dict(list(self.rt_tbl_D[router_name].values())[0]).keys())[0]
+            inter = list(dict(list(self.rt_tbl_D[p.dst].values())[0]).keys())[0]
             print("Inter: ", inter)
             self.intf_L[inter].put(p.to_byte_S(), 'out', True)
             print('%s: forwarding packet "%s" from interface %d to %d' % \
-                (self, p, i, 1))
+                (self, p, i, inter))
             #print("############################## END FORWARDING ################################")
         except queue.Full:
             print('%s: packet "%s" lost on interface %d' % (self, p, i))

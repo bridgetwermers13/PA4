@@ -1,5 +1,5 @@
-import network
-import link
+import network_2
+import link_2
 import threading
 from time import sleep
 import sys
@@ -12,33 +12,33 @@ if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads at the end
 
     # create network hosts
-    host_1 = network.Host('H1')
+    host_1 = network_2.Host('H1')
     object_L.append(host_1)
-    host_2 = network.Host('H2')
+    host_2 = network_2.Host('H2')
     object_L.append(host_2)
 
     # create routers and cost tables for reaching neighbors
     cost_D = {'H1': {0: 1}, 'RB': {1: 1}}  # {neighbor: {interface: cost}}
-    router_a = network.Router(name='RA',
+    router_a = network_2.Router(name='RA',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_a)
 
     # {neighbor: {interface: cost}}
     cost_D = {'H2': {1: 3}, 'RA': {0: 1}}
-    router_b = network.Router(name='RB',
+    router_b = network_2.Router(name='RB',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_b)
 
     # create a Link Layer to keep track of links between network nodes
-    link_layer = link.LinkLayer()
+    link_layer = link_2.LinkLayer()
     object_L.append(link_layer)
 
     # add all the links - need to reflect the connectivity in cost_D tables above
-    link_layer.add_link(link.Link(host_1, 0, router_a, 0))
-    link_layer.add_link(link.Link(router_a, 1, router_b, 0))
-    link_layer.add_link(link.Link(router_b, 1, host_2, 0))
+    link_layer.add_link(link_2.Link(host_1, 0, router_a, 0))
+    link_layer.add_link(link_2.Link(router_a, 1, router_b, 0))
+    link_layer.add_link(link_2.Link(router_b, 1, host_2, 0))
 
 
     # start all the objects

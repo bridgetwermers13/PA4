@@ -31,8 +31,8 @@ if __name__ == '__main__':
                               max_queue_size=router_queue_size)
     object_L.append(router_b)
 
-//creating the 2 additional routers
-    cost_D = {'RA': {0:1} 'RD': {1: 1}}  # {neighbor: {interface: cost}}
+    # creating the 2 additional routers
+    cost_D = {'RA': {0:1},'RD': {1 : 1}}  # {neighbor: {interface: cost}}
     router_c = network.Router(name='RC',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
@@ -52,7 +52,11 @@ if __name__ == '__main__':
     # add all the links - need to reflect the connectivity in cost_D tables above
     link_layer.add_link(link.Link(host_1, 0, router_a, 0))
     link_layer.add_link(link.Link(router_a, 1, router_b, 0))
-    link_layer.add_link(link.Link(router_b, 1, host_2, 0))
+    link_layer.add_link(link.Link(router_b, 1, router_d, 0))
+    link_layer.add_link(link.Link(router_a, 2, router_c, 0))
+    link_layer.add_link(link.Link(router_c, 2, router_d, 0))
+    link_layer.add_link(link.Link(router_d, 2, host_2, 0))
+
 
 
     # start all the objects

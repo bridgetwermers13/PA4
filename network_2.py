@@ -174,7 +174,7 @@ class Router:
                 else:
                     raise Exception('%s: Unknown packet type in packet %s' % (self, p))
 
-    # forward the packet according to the routing table
+    # forward the packet according to cost_D
     #  @param p Packet to forward
     #  @param i Incoming interface number for packet p
     def forward_packet(self, p, i):
@@ -182,7 +182,14 @@ class Router:
             # TODO: Here you will need to implement a lookup into the
             # forwarding table to find the appropriate outgoing interface
             # for now we assume the outgoing interface is 1
-            self.intf_L[1].put(p.to_byte_S(), 'out', True)
+            # 1. Get destination from packet
+            # 2. Lookup destination in cost_D
+            # 3. Get interface for forwarding
+            # 4. Forward on that interface
+            print("destination", p.dst)
+            router_name = list(self.rt_tbl_D[p.dst].keys())[0]
+            inter = list(self.cost_D[router_name].keys())[0]
+            self.intf_L[inter].put(p.to_byte_S(), 'out', True)
             print('%s: forwarding packet "%s" from interface %d to %d' % \
                 (self, p, i, 1))
         except queue.Full:
@@ -240,13 +247,13 @@ class Router:
             dest = items[1]
             cost = items[2]
             if source != self.name:
-                if dest not in self.cost_D:
-                    self.cost_D[dest] = {i: int(cost) + int(distance_to_router)}
+                if dest not in self.rt_tbl_D:
+                    self.rt_tbl_D[dest] = {source: int(cost) + int(distance_to_router)}
             # print("===========================")
             # print("Source: {}".format(source))
             # print("Destination: {}".format(dest))
             # print("Cost: {}".format(cost))
-        print(self.cost_D)
+        print(self.rt_tbl_D)
         print('%s: Received routing update %s from interface %d' % (self, p, i))
 
     # thread target for the host to keep forwarding data

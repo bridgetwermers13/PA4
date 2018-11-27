@@ -144,25 +144,35 @@ class Router:
         self.print_routes()
     lock = threading.Lock();
     # Print routing table
+    # def print_routes(self):
+    #     # TODO: print the routes as a two dimensional table
+    #     self.lock.acquire()
+    #     print()
+    #     print(self.rt_tbl_D)
+    #     headerLine = self.name + " | "
+    #     selfLine = self.name + " | "
+    #     # nextLine = self.rt_tbl_D
+    #     for i in self.rt_tbl_D:
+    #         headerLine += i + " | "
+    #         if i == self.name:
+    #             selfLine += " 0 " + " | "
+    #         else:
+    #             selfLine += str(list(dict(list(self.rt_tbl_D[i].values())[0]).values())[0]) + " | "
+    #     print(headerLine)
+    #     print(selfLine)
+    #     print()
+    #     self.lock.release()
+        #print("full r table: ", self.rt_tbl_D)
+
     def print_routes(self):
-        # TODO: print the routes as a two dimensional table
         self.lock.acquire()
         print()
-        print(self.rt_tbl_D)
-        headerLine = self.name + " | "
-        selfLine = self.name + " | "
-        # nextLine = self.rt_tbl_D
-        for i in self.rt_tbl_D:
-            headerLine += i + " | "
-            if i == self.name:
-                selfLine += " 0 " + " | "
-            else:
-                selfLine += str(list(dict(list(self.rt_tbl_D[i].values())[0]).values())[0]) + " | "
-        print(headerLine)
-        print(selfLine)
+        # print self.name + {known hosts}
+        # print self.name + {costs for neighbors from cost_D}
+        # for r in known routers [-self]:
+        #   print r.name + {costs to known hosts through r}
         print()
         self.lock.release()
-        #print("full r table: ", self.rt_tbl_D)
 
     # called when printing the object
     def __str__(self):
@@ -196,13 +206,13 @@ class Router:
             # 3. Return interface from rt_tbl_D?
             router_name = list(self.rt_tbl_D[p.dst].keys())[0]
             router_name.strip()
-            print("dest: ", p.dst)
-            print("forwarding to : ", router_name)
+            # print("dest: ", p.dst)
+            #print("forwarding to : ", router_name)
             inter = list(dict(list(self.rt_tbl_D[p.dst].values())[0]).keys())[0]
-            print("Inter: ", inter)
+            #print("Inter: ", inter)
             self.intf_L[inter].put(p.to_byte_S(), 'out', True)
-            print('%s: forwarding packet "%s" from interface %d to %d' % \
-                (self, p, i, inter))
+            #print('%s: forwarding packet "%s" from interface %d to %d' % \
+                #(self, p, i, inter))
             #print("############################## END FORWARDING ################################")
         except queue.Full:
             print('%s: packet "%s" lost on interface %d' % (self, p, i))

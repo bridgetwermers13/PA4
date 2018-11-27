@@ -148,7 +148,7 @@ class Router:
         # TODO: print the routes as a two dimensional table
         self.lock.acquire()
         print()
-        #print(self.rt_tbl_D)
+        print(self.rt_tbl_D)
         headerLine = self.name + " | "
         selfLine = self.name + " | "
         # nextLine = self.rt_tbl_D
@@ -197,7 +197,7 @@ class Router:
             router_name = list(self.rt_tbl_D[p.dst].keys())[0]
             router_name.strip()
             print("forwarding to : ", router_name)
-            inter = self.rt_tbl_D[router_name]
+            inter = list(dict(list(self.rt_tbl_D[router_name].values())[0]).keys())[0]
             print("Inter: ", inter)
             self.intf_L[inter].put(p.to_byte_S(), 'out', True)
             print('%s: forwarding packet "%s" from interface %d to %d' % \
@@ -251,7 +251,7 @@ class Router:
             if source != self.name:
                 # if destination is not in current routing table
                 if dest not in self.rt_tbl_D:
-                    self.rt_tbl_D[dest] = {source: (int(cost) + int(distance_to_router))}
+                    self.rt_tbl_D[dest] = {source : {i : (int(cost) + int(distance_to_router))}}
                     # send routing update back to source router
                     self.send_routes(i)
         self.print_routes()

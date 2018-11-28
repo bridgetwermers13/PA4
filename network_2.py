@@ -241,7 +241,7 @@ class Router:
             # encodedTable += "{}:{}:{};".format(self.name, key, str(self.rt_tbl_D[key]))
         p = NetworkPacket(0, 'control', encodedTable)
         try:
-            #print('%s: sending routing update "%s" from interface %d' % (self, p, i))
+            print('%s: sending routing update "%s" from interface %d' % (self, p, i))
             self.intf_L[i].put(p.to_byte_S(), 'out', True)
         except queue.Full:
             print('%s: packet "%s" lost on interface %d' % (self, p, i))
@@ -260,7 +260,7 @@ class Router:
             distance_to_router = list(self.cost_D[source].values())[0]
             dest = items[1]
             cost = int(str(items[2])[-1])
-            print("Update contents: ", source, "|", distance_to_router, "|", dest, "|", cost)
+            #print("Update contents: ", source, "|", distance_to_router, "|", dest, "|", cost)
             # if source not already known
             if source not in self.known_hosts:
                 self.known_hosts.append(source)
@@ -274,10 +274,10 @@ class Router:
                 currentCost = int(list(list(self.rt_tbl_D[dest].values())[0].values())[0]) + distance_to_router
                 newCost = cost
                 print(currentCost, newCost)
-                if currentCost < newCost:
+                if (currentCost < newCost) and (newCost != 0):
                     self.rt_tbl_D[dest] = {source: {i: (int(newCost) + int(distance_to_router))}}
         self.print_routes()
-        #print('%s: Received routing update %s from interface %d' % (self, p, i))
+        print('%s: Received routing update %s from interface %d' % (self, p, i))
         # print("############################## DONE UPDATING ################################")
 
     # thread target for the host to keep forwarding data

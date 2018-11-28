@@ -1,61 +1,61 @@
-import network
-import link
+import network_3
+import link_3
 import threading
 from time import sleep
 import sys
 
 ##configuration parameters
 router_queue_size = 0 #0 means unlimited
-simulation_time = 1   #give the network sufficient time to execute transfers
+simulation_time = 1   #give the network_3 sufficient time to execute transfers
 
 if __name__ == '__main__':
     object_L = [] #keeps track of objects, so we can kill their threads at the end
 
-    # create network hosts
-    host_1 = network.Host('H1')
+    # create network_3 hosts
+    host_1 = network_3.Host('H1')
     object_L.append(host_1)
-    host_2 = network.Host('H2')
+    host_2 = network_3.Host('H2')
     object_L.append(host_2)
 
     # create routers and cost tables for reaching neighbors
     cost_D = {'H1': {0: 1}, 'RB': {1: 1}, 'RC': {2: 1}}  # {neighbor: {interface: cost}}
-    router_a = network.Router(name='RA',
+    router_a = network_3.Router(name='RA',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_a)
 
     # {neighbor: {interface: cost}}
     cost_D = {'RD': {1:1}, 'RA': {0: 1}}
-    router_b = network.Router(name='RB',
+    router_b = network_3.Router(name='RB',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_b)
 
     # creating the 2 additional routers
     cost_D = {'RA': {0:1},'RD': {1 : 1}}  # {neighbor: {interface: cost}}
-    router_c = network.Router(name='RC',
+    router_c = network_3.Router(name='RC',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_c)
 
     cost_D = {'H2': {2: 1}, 'RC': {1:1}, 'RB': {1: 1}}  # {neighbor: {interface: cost}}
-    router_d = network.Router(name='RD',
+    router_d = network_3.Router(name='RD',
                               cost_D=cost_D,
                               max_queue_size=router_queue_size)
     object_L.append(router_d)
 
 
-    # create a Link Layer to keep track of links between network nodes
-    link_layer = link.LinkLayer()
+    # create a link_3 Layer to keep track of links between network_3 nodes
+    link_layer = link_3.LinkLayer()
     object_L.append(link_layer)
 
     # add all the links - need to reflect the connectivity in cost_D tables above
-    link_layer.add_link(link.Link(host_1, 0, router_a, 0))
-    link_layer.add_link(link.Link(router_a, 1, router_b, 0))
-    link_layer.add_link(link.Link(router_b, 1, router_d, 0))
-    link_layer.add_link(link.Link(router_a, 2, router_c, 0))
-    link_layer.add_link(link.Link(router_c, 2, router_d, 0))
-    link_layer.add_link(link.Link(router_d, 2, host_2, 0))
+    link_layer.add_link(link_3.Link(host_1, 0, router_a, 0))
+    link_layer.add_link(link_3.Link(router_a, 1, router_b, 0))
+    link_layer.add_link(link_3.Link(router_b, 1, router_d, 0))
+    link_layer.add_link(link_3.Link(router_a, 2, router_c, 0))
+    link_layer.add_link(link_3.Link(router_c, 2, router_d, 0))
+    link_layer.add_link(link_3.Link(router_d, 2, host_2, 0))
 
 
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     sleep(simulation_time)  #let the tables converge
     print("Converged routing tables")
     for obj in object_L:
-        if str(type(obj)) == "<class 'network.Router'>":
+        if str(type(obj)) == "<class 'network_3.Router'>":
             obj.print_routes()
 
     #send packet from host 1 to host 2

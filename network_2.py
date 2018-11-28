@@ -176,11 +176,14 @@ class Router:
         for r in self.known_hosts:
             line = r + " | "
             for s in self.rt_tbl_D:
+                neighborCost = 0
+                if s in self.cost_D:
+                    neighborCost = str(list(self.cost_D[s].values())[0])
                 cost = str(list(list(self.rt_tbl_D[s].values())[0].values()))
                 if str(list(self.rt_tbl_D[s].keys())[0]) == r:
                     line += cost + " | "
-                else:
-                    line += "    | "
+                elif neighborCost != 0:
+                    line += neighborCost + " | "
             print(line)
         print()
         self.lock.release()
@@ -266,7 +269,8 @@ class Router:
                 self.known_hosts.append(source)
             # if destination is not in current routing table
             if dest not in self.rt_tbl_D:
-                self.rt_tbl_D[dest] = {source : {i : (int(cost) + int(distance_to_router))}}
+                outi = int(list(self.cost_D[source].keys())[0])
+                self.rt_tbl_D[dest] = {source : {outi : (int(cost) + int(distance_to_router))}}
                 # send routing update back to source router
                 self.send_routes(i)
             else:

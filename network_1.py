@@ -277,7 +277,7 @@ class Router:
                 if currentCost < newCost:
                     self.rt_tbl_D[dest] = {source: {i: (int(newCost) + int(distance_to_router))}}
         self.print_routes()
-        #print('%s: Received routing update %s from interface %d' % (self, p, i))
+        print('%s: Received routing update %s from interface %d' % (self, p, i))
         # print("############################## DONE UPDATING ################################")
 
     # thread target for the host to keep forwarding data

@@ -1,6 +1,6 @@
 import queue
 import threading
-import json
+import math
 
 
 # wrapper class for a queue of packets
@@ -137,53 +137,39 @@ class Router:
         # save neighbors and interfeces on which we connect to them
         self.cost_D = cost_D    # {neighbor: {interface: cost}}
         # TODO: set up the routing table for connected hosts
-        self.rt_tbl_D = {}      # {destination: {router: cost}}
+        self.rt_tbl_D = {self.name: {self.name: 0}}      # {destination: {router: cost}}
         self.known_hosts = [self.name]
         print('%s: Initialized routing table' % self)
         for key in self.cost_D:
-            self.rt_tbl_D[key] = {self.name: self.cost_D[key]}
+            self.rt_tbl_D[key] = {self.name: int(list(self.cost_D[key].values())[0])}
         self.print_routes()
+
     lock = threading.Lock();
-    # Print routing table
-    # def print_routes(self):
-    #     # TODO: print the routes as a two dimensional table
-    #     self.lock.acquire()
-    #     print()
-    #     print(self.rt_tbl_D)
-    #     headerLine = self.name + " | "
-    #     selfLine = self.name + " | "
-    #     # nextLine = self.rt_tbl_D
-    #     for i in self.rt_tbl_D:
-    #         headerLine += i + " | "
-    #         if i == self.name:
-    #             selfLine += " 0 " + " | "
-    #         else:
-    #             selfLine += str(list(dict(list(self.rt_tbl_D[i].values())[0]).values())[0]) + " | "
-    #     print(headerLine)
-    #     print(selfLine)
-    #     print()
-    #     self.lock.release()
-        #print("full r table: ", self.rt_tbl_D)
 
     def print_routes(self):
         self.lock.acquire()
         print()
         print("Known Hosts: ", self.known_hosts)
         header = self.name + " | "
-        for dest in self.rt_tbl_D.keys():
+        for dest in self.rt_tbl_D:
             header += dest + " | "
         print(header)
+        # for every router this router knows about
         for r in self.known_hosts:
-            line = r + " | "
+            line = r + " |  "
+            # for every destination in the routing table
             for s in self.rt_tbl_D:
                 neighborCost = 0
                 if s in self.cost_D:
+                    # use value from neighbor cost table
                     neighborCost = str(list(self.cost_D[s].values())[0])
-                cost = str(list(list(self.rt_tbl_D[s].values())[0].values()))
+                cost = self.rt_tbl_D[s][r]
                 if str(list(self.rt_tbl_D[s].keys())[0]) == r:
-                    line += cost + " | "
+                    line += str(cost) + " | "
                 elif neighborCost != 0:
                     line += neighborCost + " | "
+                else:
+                    line += "  | "
             print(line)
         print()
         self.lock.release()
@@ -222,7 +208,7 @@ class Router:
             router_name.strip()
             # print("dest: ", p.dst)
             #print("forwarding to : ", router_name)
-            inter = list(dict(list(self.rt_tbl_D[p.dst].values())[0]).keys())[0]
+            inter = int(list(dict(list(self.rt_tbl_D[p.dst].values())[0]).keys())[0])
             #print("Inter: ", inter)
             self.intf_L[inter].put(p.to_byte_S(), 'out', True)
             #print('%s: forwarding packet "%s" from interface %d to %d' % \
@@ -253,33 +239,39 @@ class Router:
     # Update routing table based on a route update packet
     #  @param p Packet containing routing information
     #  @param i Interface packet was received on
+    #  routing table : {destination: {router: cost}}
+    #  cost table    : {neighbor: {interface: cost}}
     def update_routes(self, p, i):
         # print("############################## UPDATING ROUTES ################################")
         entries = p.data_S.split(";")
         entries = list(filter(None, entries))
+        # for every entry in routing update
         for entry in entries:
             items = entry.split(":")
             source = items[0]
-            distance_to_router = list(self.cost_D[source].values())[0]
+            outi = int(list(self.cost_D[source].keys())[0])
+            distance_to_router = self.cost_D[source][outi]
             dest = items[1]
             cost = int(str(items[2])[-1])
-            #print("Update contents: ", source, "|", distance_to_router, "|", dest, "|", cost)
+            print("Update contents: ", source, "|", distance_to_router, "|", dest, "|", cost)
+            if dest == self.name:
+                self.rt_tbl_D[dest] = {dest: 0}
+
             # if source not already known
             if source not in self.known_hosts:
                 self.known_hosts.append(source)
-            # if destination is not in current routing table
+                self.rt_tbl_D[dest] = {source: math.inf}
+
+            # check if new cost is lower than previous update
             if dest not in self.rt_tbl_D:
-                outi = int(list(self.cost_D[source].keys())[0])
-                self.rt_tbl_D[dest] = {source : {outi : (int(cost) + int(distance_to_router))}}
-                # send routing update back to source router
-                self.send_routes(i)
+                currentCost = math.inf
             else:
-                # check if updated cost is lower than current
-                currentCost = int(list(list(self.rt_tbl_D[dest].values())[0].values())[0]) + distance_to_router
-                newCost = cost
-                print(currentCost, newCost)
-                if (currentCost < newCost) and (newCost != 0):
-                    self.rt_tbl_D[dest] = {source: {i: (int(newCost) + int(distance_to_router))}}
+                currentCost = self.rt_tbl_D[dest][source]
+            print(currentCost, cost)
+            if (currentCost < cost) and (cost != 0):
+                self.rt_tbl_D[dest] = {source: (cost + distance_to_router)}
+                self.send_routes(outi)
+
         self.print_routes()
         print('%s: Received routing update %s from interface %d' % (self, p, i))
         # print("############################## DONE UPDATING ################################")

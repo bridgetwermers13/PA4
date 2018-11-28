@@ -231,6 +231,7 @@ class Router:
 
     # send out route update
     # @param i Interface number on which to send out a routing update
+    # TODO send routing update on all interfaces
     def send_routes(self, i):
         # TODO: Send out a routing table update
         # create a routing table update packet

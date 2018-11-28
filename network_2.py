@@ -254,33 +254,16 @@ class Router:
             items = entry.split(":")
             distance_to_router = self.cost_D[source][outi]
             dest = items[0]
-            if items[1] == math.inf or items[1] == "inf":
-                cost = math.inf
-            else:
-                cost = int(str(items[1])[-1])
+            cost = int(str(items[1])[-1])
             print("Update contents: ", source, "|", distance_to_router, "|", dest, "|", cost)
             if dest == self.name:
                 self.rt_tbl_D[self.name] = {self.name: 0}
             elif dest == source:
                 self.rt_tbl_D[source] = {dest: 0}
             else:
-                # if source not already known
-                self.send_routes(outi)
-                if source not in self.known_hosts:
-                    self.known_hosts.append(source)
-                    self.rt_tbl_D[dest] = {source: math.inf}
+                print("somthing")
 
-                if dest not in self.rt_tbl_D:
-                    currentCost = math.inf
-                else:
-                    currentCost = self.rt_tbl_D[dest][source]
-
-                print(currentCost, cost)
-                # check if new cost is lower than previous update
-                if (currentCost < cost) and (cost != 0):
-                    self.rt_tbl_D[dest] = {source: (cost + distance_to_router)}
-                    self.send_routes(outi)
-
+        print(self.rt_tbl_D)
         self.print_routes()
         print('%s: Received routing update %s from interface %d' % (self, p, i))
         # print("############################## DONE UPDATING ################################")

@@ -138,20 +138,52 @@ class Router:
         self.cost_D = cost_D    # {neighbor: {interface: cost}}
         # TODO: set up the routing table for connected hosts
         self.rt_tbl_D = {}      # {destination: {router: cost}}
+        self.known_hosts = [self.name]
         print('%s: Initialized routing table' % self)
+        for key in self.cost_D:
+            self.rt_tbl_D[key] = {self.name: self.cost_D[key]}
         self.print_routes()
-
+    lock = threading.Lock();
     # Print routing table
+    # def print_routes(self):
+    #     # TODO: print the routes as a two dimensional table
+    #     self.lock.acquire()
+    #     print()
+    #     print(self.rt_tbl_D)
+    #     headerLine = self.name + " | "
+    #     selfLine = self.name + " | "
+    #     # nextLine = self.rt_tbl_D
+    #     for i in self.rt_tbl_D:
+    #         headerLine += i + " | "
+    #         if i == self.name:
+    #             selfLine += " 0 " + " | "
+    #         else:
+    #             selfLine += str(list(dict(list(self.rt_tbl_D[i].values())[0]).values())[0]) + " | "
+    #     print(headerLine)
+    #     print(selfLine)
+    #     print()
+    #     self.lock.release()
+        #print("full r table: ", self.rt_tbl_D)
+
     def print_routes(self):
-        # TODO: print the routes as a two dimensional table
-        # print(self.rt_tbl_D)
-        headerLine = self.name + " | "
-        selfLine = self.name + " | "
-        for i in self.cost_D:
-            headerLine += i + " | "
-            selfLine += str(list(self.cost_D[i].values())[0]) + " | "
-        print(headerLine)
-        print(selfLine)
+        self.lock.acquire()
+        print()
+        print("Known Hosts: ", self.known_hosts)
+        header = self.name + " | "
+        for dest in self.rt_tbl_D.keys():
+            header += dest + " | "
+        print(header)
+        for r in self.known_hosts:
+            line = r + " | "
+            for s in self.rt_tbl_D:
+                cost = str(list(list(self.rt_tbl_D[s].values())[0].values()))
+                if str(list(self.rt_tbl_D[s].keys())[0]) == r:
+                    line += cost + " | "
+                else:
+                    line += "    | "
+            print(line)
+        print()
+        self.lock.release()
 
     # called when printing the object
     def __str__(self):
@@ -174,17 +206,25 @@ class Router:
                 else:
                     raise Exception('%s: Unknown packet type in packet %s' % (self, p))
 
-    # forward the packet according to the routing table
+    # forward the packet according to routing table
     #  @param p Packet to forward
     #  @param i Incoming interface number for packet p
     def forward_packet(self, p, i):
         try:
-            # TODO: Here you will need to implement a lookup into the
-            # forwarding table to find the appropriate outgoing interface
-            # for now we assume the outgoing interface is 1
-            self.intf_L[1].put(p.to_byte_S(), 'out', True)
+            # print("############################## BEGIN FORWARDING ################################")
+            # 1. Receive packet p on interface i
+            # 2. Look up destination of p in rt_tbl_D
+            # 3. Return interface from rt_tbl_D?
+            router_name = list(self.rt_tbl_D[p.dst].keys())[0]
+            router_name.strip()
+            # print("dest: ", p.dst)
+            #print("forwarding to : ", router_name)
+            inter = list(dict(list(self.rt_tbl_D[p.dst].values())[0]).keys())[0]
+            #print("Inter: ", inter)
+            self.intf_L[inter].put(p.to_byte_S(), 'out', True)
             print('%s: forwarding packet "%s" from interface %d to %d' % \
-                (self, p, i, 1))
+                (self, p, i, inter))
+            #print("############################## END FORWARDING ################################")
         except queue.Full:
             print('%s: packet "%s" lost on interface %d' % (self, p, i))
             pass
@@ -196,8 +236,9 @@ class Router:
         # create a routing table update packet
         # "[through this router]:[i can reach this dest]:[with a cost of #];"
         encodedTable = ""
-        for key in self.cost_D:
-            encodedTable += "{}:{}:{};".format(self.name, key, str(list(self.cost_D[key].values())[0]))
+        for key in self.rt_tbl_D:
+            encodedTable += "{}:{}:{};".format(self.name, key, str(list(self.rt_tbl_D[key].values())[0]))
+            # encodedTable += "{}:{}:{};".format(self.name, key, str(self.rt_tbl_D[key]))
         p = NetworkPacket(0, 'control', encodedTable)
         try:
             print('%s: sending routing update "%s" from interface %d' % (self, p, i))
@@ -210,44 +251,34 @@ class Router:
     #  @param p Packet containing routing information
     #  @param i Interface packet was received on
     def update_routes(self, p, i):
-        # TODO: add logic to update the routing tables and
-        # possibly send out routing updates
-        # loop through current routing table
-        # 1. Lookup host name from interface
-        # 2. If packet is from a router that does not exist as a vector in
-        #    self.cost_D
-        #    a. Add row to self.cost_D for source router
-        #    b. For every entry in p.data_S that doesn't exist as a column in
-        #       self.cost_D
-        #       - Add column for new entry in self.cost_D
-        #       - Insert value (cost to p + entry)
-        # 3. Else
-        #    a. (2b)
-        #    b. Check all corresponding values in each table
-        #    c. If value in p.data_S > self.cost_D
-        #       a. Update value in self.cost_D with (cost to p + cost in p)
-        # convertDict = json.loads(p.data_S)
-        print("Packet Dict: ", p.data_S)
-        print("This dict: ", self.cost_D)
+        # print("############################## UPDATING ROUTES ################################")
         entries = p.data_S.split(";")
         entries = list(filter(None, entries))
         for entry in entries:
             items = entry.split(":")
             source = items[0]
-            print("source: ", source)
             distance_to_router = list(self.cost_D[source].values())[0]
-            print("distance to router: ", distance_to_router)
             dest = items[1]
-            cost = items[2]
-            if source != self.name:
-                if dest not in self.cost_D:
-                    self.cost_D[dest] = {i: int(cost) + int(distance_to_router)}
-            # print("===========================")
-            # print("Source: {}".format(source))
-            # print("Destination: {}".format(dest))
-            # print("Cost: {}".format(cost))
-        print(self.cost_D)
-        print('%s: Received routing update %s from interface %d' % (self, p, i))
+            cost = int(str(items[2])[-1])
+            # print("Update contents: ", source, "|", distance_to_router, "|", dest, "|", cost)
+            # if source not already known
+            if source not in self.known_hosts:
+                self.known_hosts.append(source)
+            # if destination is not in current routing table
+            if dest not in self.rt_tbl_D:
+                self.rt_tbl_D[dest] = {source : {i : (int(cost) + int(distance_to_router))}}
+                # send routing update back to source router
+                self.send_routes(i)
+            else:
+                # check if updated cost is lower than current
+                currentCost = int(list(list(self.rt_tbl_D[dest].values())[0].values())[0]) + distance_to_router
+                newCost = cost
+                print(currentCost, newCost)
+                if currentCost < newCost:
+                    self.rt_tbl_D[dest] = {source: {i: (int(newCost) + int(distance_to_router))}}
+        self.print_routes()
+        #print('%s: Received routing update %s from interface %d' % (self, p, i))
+        # print("############################## DONE UPDATING ################################")
 
     # thread target for the host to keep forwarding data
     def run(self):
